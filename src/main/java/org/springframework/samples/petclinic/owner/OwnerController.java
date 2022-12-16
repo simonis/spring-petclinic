@@ -33,6 +33,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * @author Juergen Hoeller
  * @author Ken Krebs
@@ -73,6 +79,15 @@ class OwnerController {
 			return VIEWS_OWNER_CREATE_OR_UPDATE_FORM;
 		}
 
+		Logger logger = LoggerFactory.getLogger(OwnerController.class);
+		ObjectMapper mapper = new ObjectMapper();
+		mapper.registerModule(new JavaTimeModule());
+		try {
+			logger.info("=> OwnerController::processCreationForm(): {}", mapper.writeValueAsString(owner));
+		}
+		catch (JsonProcessingException jpe) {
+			logger.info("=> OwnerController::processCreationForm(): {}", jpe);
+		}
 		this.owners.save(owner);
 		return "redirect:/owners/" + owner.getId();
 	}
@@ -102,6 +117,15 @@ class OwnerController {
 		if (ownersResults.getTotalElements() == 1) {
 			// 1 owner found
 			owner = ownersResults.iterator().next();
+			Logger logger = LoggerFactory.getLogger(OwnerController.class);
+			ObjectMapper mapper = new ObjectMapper();
+			mapper.registerModule(new JavaTimeModule());
+			try {
+				logger.info("=> OwnerController::processFindForm(): {}", mapper.writeValueAsString(owner));
+			}
+			catch (JsonProcessingException jpe) {
+				logger.info("=> OwnerController::processFindForm(): {}", jpe);
+			}
 			return "redirect:/owners/" + owner.getId();
 		}
 
