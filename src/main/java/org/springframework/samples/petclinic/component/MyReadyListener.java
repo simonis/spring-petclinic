@@ -31,27 +31,7 @@ public class MyReadyListener {
 
 	@EventListener(ApplicationReadyEvent.class)
 	public void onApplicationEvent(ApplicationReadyEvent event) {
-		logger.info("=> MyReadyListener::onApplicationEvent(): {}", event);
-		Owner owner = owners.findById(1);
-		ObjectMapper mapper = new ObjectMapper();
-		mapper.registerModule(new JavaTimeModule());
-		try {
-			logger.info("=> MyReadyListener::onApplicationEvent(): {}", mapper.writeValueAsString(owner));
-		}
-		catch (JsonProcessingException jpe) {
-			logger.info("=> MyReadyListener::onApplicationEvent(): {}", jpe);
-		}
-		String volker = "[{\"id\":null,\"firstName\":\"Volker\",\"lastName\":\"Simonis\",\"address\":\"Schlossweg 10\",\"city\":\"Walldorf\",\"telephone\":\"0123456789\",\"pets\":[]}, {\"id\":null,\"firstName\":\"Joe\",\"lastName\":\"Cool\",\"address\":\"10 Main Street\",\"city\":\"New York\",\"telephone\":\"0123456789\",\"pets\":[]}]";
-		try {
-			List<Owner> owners = mapper.readValue(volker, new TypeReference<List<Owner>>() {
-			});
-			for (Owner o : owners) {
-				this.owners.save(o);
-			}
-		}
-		catch (JsonProcessingException jpe) {
-			logger.info("=> MyReadyListener::onApplicationEvent(): {}", jpe);
-		}
+		logger.info("=> MyReadyListener::onApplicationEvent(): {}", event.getTimeTaken().toMillis() / 1000.0);
 	}
 
 }
