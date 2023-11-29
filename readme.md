@@ -44,6 +44,23 @@ This is obviously not the most performant way of running PetCLinic (opening `htt
 
 The only thing which doesn't seem to work correctly through the Lambda function URL is serving binary content. You'll notice that the images on the starting page are not displayed. This is because they are served in base64 encoded form which the browser doesn't correctly recognize. Please let me know if you know how this can be fixed :).
 
+## How to run locally
+
+The modified version of Spring PetClinic can also be run locally with the help of the [AWS Lambda Runtime Interface Emulator](https://github.com/aws/aws-lambda-runtime-interface-emulator/tree/develop) (RIE) and the [AWS Lambda Java Runtime Interface Client](https://github.com/aws/aws-lambda-java-libs/tree/main/aws-lambda-java-runtime-interface-client):
+```bash
+$ aws-lambda-rie java -cp \
+  aws-lambda-java-core-1.2.3.jar:aws-lambda-java-runtime-interface-client-2.4.1.jar:aws-lambda-java-serialization-1.1.2.jar:spring-petclinic-2.7.3.jar \
+  com.amazonaws.services.lambda.runtime.api.client.AWSLambda \
+  org.springframework.samples.petclinic.PetClinicLambdaHandler::handleRequest
+```
+From another terminal we can then use `curl` to access the PetClinic:
+```bash
+$ curl "http://localhost:8080/2015-03-31/functions/function/invocations" -d '\
+       { "rawPath": "/", "requestContext": { "http": { "method": "GET" } } }'
+
+{"statusCode":200,"headers":{...},...,"body":"<!DOCTYPE html>\n\n<html>...</html>","base64Encoded":false}
+```
+Notice that the [request and response payloads](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html#http-api-develop-integrations-lambda.proxy-format) for our Lambda enabled for Function URLs are in the [Amazon API Gateway payload format version 2.0](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html#http-api-develop-integrations-lambda.proxy-format).
 
 # Spring PetClinic Sample Application [![Build Status](https://github.com/spring-projects/spring-petclinic/actions/workflows/maven-build.yml/badge.svg)](https://github.com/spring-projects/spring-petclinic/actions/workflows/maven-build.yml)
 
