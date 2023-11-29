@@ -1,3 +1,50 @@
+# Spring PetClinic for AWS Lambda
+
+This is a modified version of the original [Spring PetClinic Sample Application](https://github.com/spring-projects/spring-petclinic)
+which can be deployed as an [AWS Lambda function with a function URL](https://docs.aws.amazon.com/lambda/latest/dg/lambda-urls.html).
+
+In order to achieve this, the following changes have been done:
+
+- Add a new dependency on [`aws-serverless-java-container-springboot2`](https://github.com/awslabs/aws-serverless-java-container/wiki) to `pom.xml`:
+    ```xml
+    <dependency>
+      <groupId>com.amazonaws.serverless</groupId>
+      <artifactId>aws-serverless-java-container-springboot2</artifactId>
+      <version>1.9.1</version>
+    </dependency>
+   ```
+- Remove the `spring-boot-maven-plugin` and replace it by the `maven-shade-plugin`. Instead of building the usual fat jar this will instead build a shaded version of the Spring PetClinic jar and remove the tomcat server from it. When running in AWS Lambda we don't need a web server because Lambda will act as the server. We also have to build an exploded, shaded jar such that we can start the PetClinic application without the special `org.springframework.boot.loader.JarLauncher` which is required if classes have to be loaded from nested jars.
+- Add a new [handler](./src/main/java/org/springframework/samples/petclinic/PetClinicLambdaHandler.java) which basically wraps our PetClinic application:
+    ```java
+    public class PetClinicLambdaHandler implements RequestHandler<HttpApiV2ProxyRequest, AwsProxyResponse> {
+
+      private static SpringBootLambdaContainerHandler<HttpApiV2ProxyRequest, AwsProxyResponse> handler;
+
+      static {
+        try {
+          handler = SpringBootLambdaContainerHandler.getHttpApiV2ProxyHandler(PetClinicApplication.class);
+        } catch (ContainerInitializationException ex) {
+          throw new RuntimeException("Unable to load spring boot application", ex);
+        }
+      }
+
+      @Override
+      public AwsProxyResponse handleRequest(HttpApiV2ProxyRequest input, Context context) {
+        return handler.proxy(input, context);
+      }
+    }
+    ```
+    You can find more details on the `SpringBootLambdaContainerHandler` in the [AWS serverless java container Wiki](https://github.com/awslabs/aws-serverless-java-container/wiki/Quick-start---Spring-Boot2).
+
+After these changes, `mvn clean package` will create `target/spring-petclinic-2.7.3.jar` which can be deployed as a AWS Lambda function (be sure to configure 5120mb of memory to get enough vCPUs, otherwise the Spring startup time might exceed the 10 seconds limit for the Lambda's Init phase).
+
+If we configure a function URL for the Lambda (under `Configuration -> Function URL`) we will get a URL of the form `https://<url-id>.lambda-url.<region>.on.aws/` which we can open directly in the browser and see the common PetClinic starting page.
+
+This is obviously not the most performant way of running PetCLinic (opening `https://<url-id>.lambda-url.<region>.on.aws/` alone will start 6 concurrent instances of our function in order to download all the different images and CSS files the browser request for the landing page) but it more or less works.
+
+The only thing which doesn't seem to work correctly through the Lambda function URL is serving binary content. You'll notice that the images on the starting page are not displayed. This is because they are served in base64 encoded form which the browser doesn't correctly recognize. Please let me know if you know how this can be fixed :).
+
+
 # Spring PetClinic Sample Application [![Build Status](https://github.com/spring-projects/spring-petclinic/actions/workflows/maven-build.yml/badge.svg)](https://github.com/spring-projects/spring-petclinic/actions/workflows/maven-build.yml)
 
 [![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/spring-projects/spring-petclinic)
@@ -47,7 +94,7 @@ Our issue tracker is available here: https://github.com/spring-projects/spring-p
 In its default configuration, Petclinic uses an in-memory database (H2) which
 gets populated at startup with data. The h2 console is automatically exposed at `http://localhost:8080/h2-console`
 and it is possible to inspect the content of the database using the `jdbc:h2:mem:testdb` url.
- 
+
 A similar setup is provided for MySQL and PostgreSQL in case a persistent database configuration is needed. Note that whenever the database type is changed, the app needs to be run with a different profile: `spring.profiles.active=mysql` for MySQL or `spring.profiles.active=postgres` for PostgreSQL.
 
 You could start MySQL or PostgreSQL locally with whatever installer works for your OS, or with docker:
@@ -75,7 +122,7 @@ There is a `petclinic.css` in `src/main/resources/static/resources/css`. It was 
 The following items should be installed in your system:
 * Java 11 or newer (full JDK not a JRE).
 * git command line tool (https://help.github.com/articles/set-up-git)
-* Your preferred IDE 
+* Your preferred IDE
   * Eclipse with the m2e plugin. Note: when m2e is available, there is an m2 icon in `Help -> About` dialog. If m2e is
   not there, just follow the install process here: https://www.eclipse.org/m2e/
   * [Spring Tools Suite](https://spring.io/tools) (STS)
@@ -148,7 +195,7 @@ The Spring PetClinic sample application is released under version 2.0 of the [Ap
 
 [spring-petclinic]: https://github.com/spring-projects/spring-petclinic
 [spring-framework-petclinic]: https://github.com/spring-petclinic/spring-framework-petclinic
-[spring-petclinic-angularjs]: https://github.com/spring-petclinic/spring-petclinic-angularjs 
+[spring-petclinic-angularjs]: https://github.com/spring-petclinic/spring-petclinic-angularjs
 [javaconfig branch]: https://github.com/spring-petclinic/spring-framework-petclinic/tree/javaconfig
 [spring-petclinic-angular]: https://github.com/spring-petclinic/spring-petclinic-angular
 [spring-petclinic-microservices]: https://github.com/spring-petclinic/spring-petclinic-microservices
