@@ -24,7 +24,16 @@ public class PetClinicLambdaHandler implements RequestHandler<HttpApiV2ProxyRequ
 	public AwsProxyResponse handleRequest(HttpApiV2ProxyRequest input, Context context) {
 		boolean log = Boolean.getBoolean("PetClinicLambdaHandler.log");
 		if (log) {
+			System.out.println("==========================================");
 			new Throwable().printStackTrace(System.out);
+			System.out.println("==========================================");
+			if (input.getRequestContext() != null && input.getRequestContext().getHttp() != null) {
+				System.out.println("HttpApiV2ProxyRequest.getRequestContext().getHttp().getMethod() = "
+						+ input.getRequestContext().getHttp().getMethod());
+				System.out.println("HttpApiV2ProxyRequest.getRequestContext().getHttp().getPath() = "
+						+ input.getRequestContext().getHttp().getPath());
+				System.out.println("==========================================");
+			}
 		}
 		return handler.proxy(input, context);
 	}

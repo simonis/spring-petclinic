@@ -1,0 +1,36 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  PetClinicLambdaHandler
+  Sample SAM Template for a PetClinic LambdaHandler
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 20
+    MemorySize: 512
+    Environment:
+      Variables:
+        JAVA_TOOL_OPTIONS: "-Xlog:coops*=trace -DPetClinicLambdaHandler.log=true"
+
+Resources:
+  PetClinicHttpHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: org.springframework.samples.petclinic.PetClinicLambdaHandler::handleRequest
+      Runtime: java21
+      Events:
+        SpringBoot2PetStoreRoot:
+          Type: HttpApi
+          Properties:
+            Path: /
+            Method: GET
+        SpringBoot2PetStore:
+          Type: HttpApi
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+    Metadata:
+      BuildMethod: makefile
+
